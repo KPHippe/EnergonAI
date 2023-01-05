@@ -2,20 +2,27 @@ import os
 import torch
 from multiprocessing import Pool
 from pathlib import Path
+from argparse import ArgumentParser
 
 # download pytorch model ckpt in https://huggingface.co/facebook/opt-66b/tree/main
 # you can use whether wget or git lfs
 
-path = "/raid/khippe/opt-models/opt-66b"
-new_path = "/raid/khippe/opt-models/opt-66b/energon_processed/"
+parser = ArgumentParser()
+parser.add_argument("--ckpt_path", type=Path, required=True)
+parser.add_argument("--out_path", type=Path, required=True)
 
-assert os.path.isdir(path)
-Path(new_path).mkdir(parents=True, exist_ok=True)
+args = parser.parse_args()
+
+ckpt_path: Path = args.ckpt_path
+out_path: Path = args.out_path
+
+assert ckpt_path.is_dir()
+out_path.mkdir(parents=True, exist_ok=True)
 
 files = []
-for filename in os.listdir(path):
+for filename in os.listdir(ckpt_path):
     if filename.endswith(".bin"):
-        filepath = os.path.join(path, filename)
+        filepath = os.path.join(ckpt_path, filename)
         if os.path.isfile(filepath):
             files.append(filepath)
 
@@ -47,10 +54,10 @@ for k, v in restored.items():
     count = count + 1
     if count == split_num:
         filename = str(file_count) + "-restored.pt"
-        torch.save(tmp, os.path.join(new_path, filename))
+        torch.save(tmp, os.path.join(out_path, filename))
         file_count = file_count + 1
         count = 0
         tmp = {}
 
 filename = str(file_count) + "-restored.pt"
-torch.save(tmp, os.path.join(new_path, filename))
+torch.save(tmp, os.path.join(out_path, filename))
